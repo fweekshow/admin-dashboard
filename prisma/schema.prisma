@@ -12,13 +12,27 @@ model User {
   conversationId String
   firstSeenAt    DateTime @default(now())
   lastSeenAt     DateTime @updatedAt
+  name           String?
 
   roleId String
   role   Role   @relation(fields: [roleId], references: [id])
 
+  analytics        UserAnalytics?
   meds             UserMeds?
   assignedClients  UserAssignedClient[] @relation("Advocate")
   assignedAdvocate UserAssignedClient[] @relation("Client")
+
+  availabilitySlots AdvocateAvailability[]
+  bookedSlots       AdvocateAvailability[] @relation("BookedSlots")
+
+  groupMemberships GroupMember[]
+
+  familyLinksAsClient ClientFamilyLink[] @relation("Client")
+  familyLinksAsFamily ClientFamilyLink[] @relation("Family")
+
+  laundrySchedules LaundrySchedule[]
+  staffMember      StaffMember?
+  supportRequests  SupportRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -32,6 +46,19 @@ model Role {
   description String?
 
   users User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserAnalytics {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  actionClicks  Json @default("{}")
+  totalMessages Int  @default(0)
+  broadcast     Json @default("{}")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -64,6 +91,96 @@ model UserAssignedClient {
   @@index([clientUserId])
 }
 
+model SupportRequest {
+  id            String   @id @default(cuid())
+  clientUserId  String
+  client        User     @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  
+  status        String   @default("pending")
+  source        String 
+  
+  notificationsSent Int       @default(0)
+  lastAttemptAt     DateTime?
+  errorMessage      String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([clientUserId, status])
+  @@index([status, createdAt])
+}
+
+model ClientFamilyLink {
+  id           String  @id @default(cuid())
+  clientUserId String
+  familyUserId String
+  relationship String?
+
+  client User @relation("Client", fields: [clientUserId], references: [id], onDelete: Cascade)
+  family User @relation("Family", fields: [familyUserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientUserId, familyUserId])
+  @@index([clientUserId])
+  @@index([familyUserId])
+}
+
+model AdvocateAvailability {
+  id String @id @default(cuid())
+
+  advocateId String
+  advocate   User   @relation(fields: [advocateId], references: [id], onDelete: Cascade)
+
+  startTime DateTime
+  endTime   DateTime
+  timezone  String   @default("America/Los_Angeles")
+
+  isBooked   Boolean @default(false)
+  bookedById String?
+  bookedBy   User?   @relation("BookedSlots", fields: [bookedById], references: [id])
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([advocateId, startTime])
+}
+
+model Group {
+  id          String  @id @default(cuid())
+  groupId     String  @unique
+  name        String?
+  description String?
+
+  groupMembers GroupMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GroupMember {
+  id String @id @default(cuid())
+
+  groupId String
+  userId  String
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role     String?
+  joinedAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+}
+
 model MealTemplate {
   id         String    @id @default(cuid())
   date       DateTime?
@@ -71,10 +188,11 @@ model MealTemplate {
   items      Json
   notes      String?
   daysOfWeek String[]  @default([])
+  nutritionHighlights Json?
 
   startTime  String?
   endTime    String?
-  timezone   String   @default("America/Los_Angeles")
+  timezone    String   @default("America/Los_Angeles")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -84,20 +202,25 @@ model MealTemplate {
 }
 
 model ActivityTemplate {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  startTime   String
-  endTime     String
-  location    String?
-  daysOfWeek  String[] @default([])
-  timezone    String   @default("America/Los_Angeles")
-  notes       String?
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  startTime     String
+  endTime       String
+  location      String?
+  daysOfWeek    String[] @default([])
+  timezone      String   @default("America/Los_Angeles")
+  notes         String?
+  date          DateTime?
+  facilitatorId String?
+  facilitator   StaffMember? @relation(fields: [facilitatorId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([daysOfWeek])
+  @@index([date])
+  @@index([facilitatorId])
 }
 
 model Guideline {
@@ -124,3 +247,157 @@ model HouseRule {
   @@index([category])
 }
 
+model ActionConfig {
+  id       String  @id @default(cuid())
+  actionId String  @unique
+  label    String
+  enabled  Boolean @default(true)
+
+  responseType   String
+  staticText     String?
+  dataSource     String?
+  templateFormat String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([actionId])
+}
+
+model StaffMember {
+  id          String  @id @default(cuid())
+  name        String
+  title       String?
+  division    String?
+  email       String?
+  phone       String?
+  reportsToId String?
+  reportsTo   StaffMember? @relation("StaffHierarchy", fields: [reportsToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subordinates StaffMember[] @relation("StaffHierarchy")
+  bhrStatus   String?
+  userId      String? @unique
+  user        User?   @relation(fields: [userId], references: [id])
+
+  housekeepingTasks HousekeepingSchedule[]
+  facilitatedActivities ActivityTemplate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([reportsToId])
+  @@index([email])
+}
+
+enum HousekeepingTaskType {
+  Daily
+  Deep
+}
+
+model HousekeepingSchedule {
+  id                  String   @id @default(cuid())
+  date                DateTime
+  dayOfWeek           String
+  roomArea            String?
+  taskType            HousekeepingTaskType?
+  dailyTasksCompleted String?
+  assignedStaffId     String?
+  assignedStaff       StaffMember? @relation(fields: [assignedStaffId], references: [id])
+  timeIn              DateTime?
+  timeOut             DateTime?
+  supervisorInitials  String?
+  notes               String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([assignedStaffId])
+}
+
+enum LaundryType {
+  Personal
+  Linens
+  Towels
+}
+
+model LaundrySchedule {
+  id                 String    @id @default(cuid())
+  date               DateTime
+  dayOfWeek          String
+  memberName         String?
+  clientId           String?
+  client             User?     @relation(fields: [clientId], references: [id])
+  roomNumber         String?
+  laundryType        LaundryType
+  laundryVendor      String?
+  expectedReturnDate DateTime?
+  returnedDate       DateTime?
+  conditionCheck     Boolean?
+  notes              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([clientId])
+}
+
+enum ScheduleBlockType {
+  WakeUp
+  MedicationWindow
+  Meal
+  GroupSession
+  FreeTime
+  QuietHours
+  LightsOut
+  Other
+}
+
+model DailyScheduleTemplate {
+  id          String   @id @default(cuid())
+  startTime   String
+  endTime     String?
+  blockType   ScheduleBlockType
+  activity    String
+  location    String?
+  notes       String?
+  daysOfWeek  String[] @default([])
+  timezone    String   @default("America/Los_Angeles")
+
+  refersToMeal     Boolean @default(false)
+  refersToActivity Boolean @default(false)
+  refersToMeds     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([startTime])
+  @@index([daysOfWeek])
+  @@index([blockType])
+}
+
+model EmergencyContact {
+  id          String  @id @default(cuid())
+  name        String
+  phoneNumber String
+  type        String
+  notes       String?
+  priority    Int     @default(0)
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+  @@index([priority])
+}
+
+model ActionOverride {
+  id        String   @id @default(cuid())
+  actionId  String   @unique
+  enabled   Boolean  @default(false)
+  text      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

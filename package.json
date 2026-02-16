@@ -11,8 +11,7 @@
     "start": "next start -H 0.0.0.0",
     "lint": "next lint",
     "postinstall": "npx prisma generate",
-    "db:push": "npx prisma db push",
-    "seed": "tsx scripts/seed-actions.ts"
+    "db:push": "npx prisma db push"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",

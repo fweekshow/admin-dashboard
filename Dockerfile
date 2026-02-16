@@ -31,12 +31,11 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 USER nextjs
 
-# Railway will route to whatever port the app listens on
-# Next.js standalone automatically reads PORT from environment
-EXPOSE 8080
+# Railway sets PORT dynamically - expose a range
+EXPOSE 3000
 
-ENV HOSTNAME="0.0.0.0"
 ENV NODE_ENV=production
 
-# Next.js standalone server.js reads PORT from Railway's environment automatically
-CMD ["sh", "-c", "cd /app/.next/standalone && node server.js"]
+# Next.js standalone reads PORT from Railway automatically
+# Railway will inject PORT env var at runtime
+CMD ["node", ".next/standalone/server.js"]

@@ -5,9 +5,35 @@ interface ParsedRow {
   [key: string]: string;
 }
 
-function parseCSV(text: string): ParsedRow[] {
+const EXPECTED_HEADERS: Record<string, string[]> = {
+  meals: ["Date", "Day of Week", "Meal Type", "Items", "Start Time", "End Time", "Nutrition Highlights", "Notes"],
+  activities: ["Date", "Day of Week", "Activity Name", "Description", "Start Time", "End Time", "Location", "Facilitator", "Notes"],
+  schedule: ["Start Time", "End Time", "Block Type", "Activity", "Location", "Notes", "Days of Week", "Refers to Meal", "Refers to Activity", "Refers to Meds"],
+  staff: ["Name", "Title", "Division", "Email", "Phone", "Reports To"],
+  guidelines: ["Title", "Content", "Category"],
+  houserules: ["Title", "Content", "Category"],
+  emergency: ["Name", "Phone Number", "Type", "Notes", "Priority"],
+  housekeeping: ["Date", "Day of Week", "Room/Area", "Task Type", "Daily Tasks Completed", "Assigned Staff", "Time In", "Time Out", "Supervisor Initials", "Notes"],
+  laundry: ["Date", "Day of Week", "Member Name", "Room Number", "Laundry Type", "Laundry Vendor", "Expected Return Date", "Returned Date", "Condition Check", "Notes"],
+  medications: ["User", "Medication", "Dosage", "Time", "Frequency", "Prescribing Doctor", "Notes"],
+};
+
+function validateHeaders(csvHeaders: string[], table: string): { valid: boolean; missing: string[]; unexpected: string[] } {
+  const expected = EXPECTED_HEADERS[table];
+  if (!expected) return { valid: true, missing: [], unexpected: [] };
+  const normalizedExpected = expected.map((h) => h.toLowerCase().trim());
+  const normalizedCsv = csvHeaders.map((h) => h.toLowerCase().trim());
+  const missing = expected.filter((h) => !normalizedCsv.includes(h.toLowerCase().trim()));
+  const unexpected = csvHeaders.filter((h) => !normalizedExpected.includes(h.toLowerCase().trim()));
+  // At least 50% of expected columns must be present
+  const matchCount = expected.length - missing.length;
+  const valid = matchCount >= Math.ceil(expected.length * 0.5) && missing.length <= 2;
+  return { valid, missing, unexpected };
+}
+
+function parseCSV(text: string): { headers: string[]; rows: ParsedRow[] } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 2) return [];
+  if (lines.length < 2) return { headers: [], rows: [] };
   const headers = lines[0].split(",").map((h) => h.trim());
   const rows: ParsedRow[] = [];
   for (let i = 1; i < lines.length; i++) {
@@ -17,7 +43,7 @@ function parseCSV(text: string): ParsedRow[] {
     headers.forEach((h, idx) => { row[h] = values[idx].trim(); });
     rows.push(row);
   }
-  return rows;
+  return { headers, rows };
 }
 
 function splitCSVLine(line: string): string[] {
@@ -331,10 +357,25 @@ export async function POST(request: Request) {
     }
 
     const text = await file.text();
-    const rows = parseCSV(text);
+    const { headers, rows } = parseCSV(text);
 
     if (rows.length === 0) {
       return NextResponse.json({ error: "No data rows found in CSV" }, { status: 400 });
+    }
+
+    // Validate CSV headers against expected columns for the target table
+    const validation = validateHeaders(headers, table);
+    if (!validation.valid) {
+      return NextResponse.json(
+        {
+          error: "Column mismatch — your CSV doesn't match the target table",
+          expected: EXPECTED_HEADERS[table] || [],
+          received: headers,
+          missing: validation.missing,
+          unexpected: validation.unexpected,
+        },
+        { status: 400 }
+      );
     }
 
     if (clearExisting) {

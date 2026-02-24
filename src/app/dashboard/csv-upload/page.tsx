@@ -71,11 +71,25 @@ export default function CsvUploadPage() {
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<{ success: boolean; imported?: number; total?: number; error?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [columnMismatch, setColumnMismatch] = useState<{ missing: string[]; unexpected: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const validateColumns = (csvHeaders: string[], targetTable: string): { valid: boolean; missing: string[]; unexpected: string[] } => {
+    const expected = EXPECTED_HEADERS[targetTable];
+    if (!expected) return { valid: true, missing: [], unexpected: [] };
+    const normalizedExpected = expected.map((h) => h.toLowerCase().trim());
+    const normalizedCsv = csvHeaders.map((h) => h.toLowerCase().trim());
+    const missing = expected.filter((h) => !normalizedCsv.includes(h.toLowerCase().trim()));
+    const unexpected = csvHeaders.filter((h) => !normalizedExpected.includes(h.toLowerCase().trim()));
+    const matchCount = expected.length - missing.length;
+    const valid = matchCount >= Math.ceil(expected.length * 0.5) && missing.length <= 2;
+    return { valid, missing, unexpected };
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setResult(null);
     setError(null);
+    setColumnMismatch(null);
     const f = e.target.files?.[0];
     if (!f) return;
     if (!f.name.endsWith(".csv")) {
@@ -89,6 +103,13 @@ export default function CsvUploadPage() {
       setError("No data rows found in the CSV");
       setPreview(null);
       return;
+    }
+    // Validate columns immediately
+    if (table) {
+      const validation = validateColumns(parsed.headers, table);
+      if (!validation.valid) {
+        setColumnMismatch({ missing: validation.missing, unexpected: validation.unexpected });
+      }
     }
     setPreview(parsed);
   };
@@ -122,6 +143,7 @@ export default function CsvUploadPage() {
     setPreview(null);
     setResult(null);
     setError(null);
+    setColumnMismatch(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -258,13 +280,42 @@ export default function CsvUploadPage() {
               </button>
               <button
                 onClick={handleUpload}
-                disabled={uploading}
+                disabled={uploading || !!columnMismatch}
                 className={u.btnPrimary}
+                title={columnMismatch ? "Fix column mismatch before importing" : ""}
               >
-                {uploading ? "Importing..." : `Import ${totalRows}${moreRows ? "+" : ""} Rows`}
+                {uploading ? "Importing..." : columnMismatch ? "⚠️ Column Mismatch" : `Import ${totalRows}${moreRows ? "+" : ""} Rows`}
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Column mismatch warning */}
+      {columnMismatch && (
+        <div className={u.mismatchBanner}>
+          <div className={u.mismatchTitle}>⚠️ Column Mismatch — CSV doesn&apos;t match the target table</div>
+          {columnMismatch.missing.length > 0 && (
+            <div className={u.mismatchSection}>
+              <span className={u.mismatchLabel}>Missing columns:</span>
+              <div className={s.tagList}>
+                {columnMismatch.missing.map((h) => (
+                  <span key={h} className={u.tagMissing}>{h}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {columnMismatch.unexpected.length > 0 && (
+            <div className={u.mismatchSection}>
+              <span className={u.mismatchLabel}>Unexpected columns:</span>
+              <div className={s.tagList}>
+                {columnMismatch.unexpected.map((h) => (
+                  <span key={h} className={u.tagUnexpected}>{h}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          <p className={u.mismatchHint}>Upload a CSV with matching columns or select the correct target table.</p>
         </div>
       )}
 

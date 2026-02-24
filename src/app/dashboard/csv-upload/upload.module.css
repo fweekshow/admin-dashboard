@@ -219,6 +219,64 @@
   color: var(--text-primary);
 }
 
+/* Column mismatch banner */
+.mismatchBanner {
+  background: rgba(255, 165, 0, 0.08);
+  border: 1px solid rgba(255, 165, 0, 0.4);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.mismatchTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffa500;
+  margin-bottom: 14px;
+}
+
+.mismatchSection {
+  margin-bottom: 10px;
+}
+
+.mismatchLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.tagMissing {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 100px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.tagUnexpected {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 100px;
+  background: rgba(255, 165, 0, 0.15);
+  color: #ffa500;
+  border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+.mismatchHint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 @media (max-width: 768px) {
   .tableGrid {
     grid-template-columns: 1fr;

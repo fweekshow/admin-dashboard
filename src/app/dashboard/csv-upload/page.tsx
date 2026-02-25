@@ -3,32 +3,7 @@
 import { useState, useRef } from "react";
 import s from "../shared.module.css";
 import u from "./upload.module.css";
-
-const TABLES = [
-  { value: "meals", label: "Meal Templates", file: "meal-menu.csv" },
-  { value: "activities", label: "Activity Templates", file: "group-schedule.csv" },
-  { value: "schedule", label: "Daily Schedule", file: "daily-schedule.csv" },
-  { value: "staff", label: "Staff Members", file: "team-roster.csv" },
-  { value: "guidelines", label: "Guidelines", file: "" },
-  { value: "houserules", label: "House Rules", file: "" },
-  { value: "emergency", label: "Emergency Contacts", file: "emergency-contacts.csv" },
-  { value: "housekeeping", label: "Housekeeping Schedule", file: "housekeeping-schedule.csv" },
-  { value: "laundry", label: "Laundry Schedule", file: "laundry-schedule.csv" },
-  { value: "medications", label: "Medications", file: "medications.csv" },
-];
-
-const EXPECTED_HEADERS: Record<string, string[]> = {
-  meals: ["Date", "Day of Week", "Meal Type", "Items", "Start Time", "End Time", "Nutrition Highlights", "Notes"],
-  activities: ["Date", "Day of Week", "Activity Name", "Description", "Start Time", "End Time", "Location", "Facilitator", "Notes"],
-  schedule: ["Start Time", "End Time", "Block Type", "Activity", "Location", "Notes", "Days of Week", "Refers to Meal", "Refers to Activity", "Refers to Meds"],
-  staff: ["Name", "Title", "Division", "Email", "Phone", "Reports To"],
-  guidelines: ["Title", "Content", "Category"],
-  houserules: ["Title", "Content", "Category"],
-  emergency: ["Name", "Phone Number", "Type", "Notes", "Priority"],
-  housekeeping: ["Date", "Day of Week", "Room/Area", "Task Type", "Daily Tasks Completed", "Assigned Staff", "Time In", "Time Out", "Supervisor Initials", "Notes"],
-  laundry: ["Date", "Day of Week", "Member Name", "Room Number", "Laundry Type", "Laundry Vendor", "Expected Return Date", "Returned Date", "Condition Check", "Notes"],
-  medications: ["User", "Medication", "Dosage", "Time", "Frequency", "Prescribing Doctor", "Notes"],
-};
+import { EXPECTED_HEADERS, TABLES } from "@/lib/constants";
 
 interface ParsedRow {
   [key: string]: string;

@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import s from "../shared.module.css";
-
-const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+import CsvUploadInline from "../CsvUploadInline";
+import { DAYS } from "@/lib/constants";
 
 interface Activity {
   id: string;
@@ -106,6 +106,7 @@ export default function ActivitiesPage() {
           <p className={s.subtitle}>{activities.length} activity templates</p>
         </div>
         <div className={s.headerActions}>
+          <CsvUploadInline table="activities" label="Activities" onSuccess={fetchData} />
           <button className="btn btn-primary" onClick={openAdd}>+ Add Activity</button>
         </div>
       </div>

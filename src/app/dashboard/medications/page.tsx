@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import s from "../shared.module.css";
+import CsvUploadInline from "../CsvUploadInline";
 
 interface MedEntry {
   medication: string;
@@ -171,6 +172,7 @@ export default function MedicationsPage() {
           <p className={s.subtitle}>Manage client medication schedules</p>
         </div>
         <div className={s.headerActions}>
+          <CsvUploadInline table="medications" label="Medications" onSuccess={fetchData} />
           <button onClick={openAdd} className={s.btnIcon} title="Add Medications" style={{ width: "auto", padding: "8px 16px", gap: "6px", display: "flex", alignItems: "center" }}>
             ➕ Add
           </button>

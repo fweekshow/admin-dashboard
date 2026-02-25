@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import s from "../shared.module.css";
+import CsvUploadInline from "../CsvUploadInline";
+import { LAUNDRY_TYPES } from "@/lib/constants";
 
 interface LaundryItem {
   id: string;
@@ -17,8 +19,6 @@ interface LaundryItem {
   conditionCheck: boolean | null;
   notes: string | null;
 }
-
-const LAUNDRY_TYPES = ["Personal", "Linens", "Towels"];
 
 const emptyItem = (): Partial<LaundryItem> => ({
   date: new Date().toISOString().split("T")[0], dayOfWeek: "", memberName: "",
@@ -67,7 +67,7 @@ export default function LaundryPage() {
     <div className={s.container}>
       <div className={s.header}>
         <div><h1>👕 Laundry</h1><p className={s.subtitle}>{items.length} records</p></div>
-        <div className={s.headerActions}><button className="btn btn-primary" onClick={openAdd}>+ Add Record</button></div>
+        <div className={s.headerActions}><CsvUploadInline table="laundry" label="Laundry" onSuccess={fetchData} /><button className="btn btn-primary" onClick={openAdd}>+ Add Record</button></div>
       </div>
       {error && <div className={s.errorBanner}>{error}</div>}
       <div className={s.tableWrap}>

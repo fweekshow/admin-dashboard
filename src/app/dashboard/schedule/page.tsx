@@ -2,9 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import s from "../shared.module.css";
-
-const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-const BLOCK_TYPES = ["WakeUp", "MedicationWindow", "Meal", "GroupSession", "FreeTime", "QuietHours", "LightsOut", "Other"];
+import CsvUploadInline from "../CsvUploadInline";
+import { DAYS, BLOCK_TYPES } from "@/lib/constants";
 
 interface ScheduleBlock {
   id: string;
@@ -86,6 +85,7 @@ export default function SchedulePage() {
           <p className={s.subtitle}>{blocks.length} schedule blocks</p>
         </div>
         <div className={s.headerActions}>
+          <CsvUploadInline table="schedule" label="Daily Schedule" onSuccess={fetchData} />
           <button className="btn btn-primary" onClick={openAdd}>+ Add Block</button>
         </div>
       </div>

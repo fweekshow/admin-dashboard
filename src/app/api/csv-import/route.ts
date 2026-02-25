@@ -1,22 +1,10 @@
 import { NextResponse } from "next/server";
 import { getPrisma } from "@/lib/prisma";
+import { EXPECTED_HEADERS, TRUTHY_VALUES, FALSY_VALUES, BLOCK_TYPE_ALIASES, LAUNDRY_TYPES } from "@/lib/constants";
 
 interface ParsedRow {
   [key: string]: string;
 }
-
-const EXPECTED_HEADERS: Record<string, string[]> = {
-  meals: ["Date", "Day of Week", "Meal Type", "Items", "Start Time", "End Time", "Nutrition Highlights", "Notes"],
-  activities: ["Date", "Day of Week", "Activity Name", "Description", "Start Time", "End Time", "Location", "Facilitator", "Notes"],
-  schedule: ["Start Time", "End Time", "Block Type", "Activity", "Location", "Notes", "Days of Week", "Refers to Meal", "Refers to Activity", "Refers to Meds"],
-  staff: ["Name", "Title", "Division", "Email", "Phone", "Reports To"],
-  guidelines: ["Title", "Content", "Category"],
-  houserules: ["Title", "Content", "Category"],
-  emergency: ["Name", "Phone Number", "Type", "Notes", "Priority"],
-  housekeeping: ["Date", "Day of Week", "Room/Area", "Task Type", "Daily Tasks Completed", "Assigned Staff", "Time In", "Time Out", "Supervisor Initials", "Notes"],
-  laundry: ["Date", "Day of Week", "Member Name", "Room Number", "Laundry Type", "Laundry Vendor", "Expected Return Date", "Returned Date", "Condition Check", "Notes"],
-  medications: ["User", "Medication", "Dosage", "Time", "Frequency", "Prescribing Doctor", "Notes"],
-};
 
 function validateHeaders(csvHeaders: string[], table: string): { valid: boolean; missing: string[]; unexpected: string[] } {
   const expected = EXPECTED_HEADERS[table];
@@ -74,8 +62,8 @@ function parseDate(val: string): Date | null {
 function parseBool(val: string): boolean | null {
   if (!val) return null;
   const lower = val.toLowerCase();
-  if (["yes", "true", "1", "y"].includes(lower)) return true;
-  if (["no", "false", "0", "n"].includes(lower)) return false;
+  if ((TRUTHY_VALUES as readonly string[]).includes(lower)) return true;
+  if ((FALSY_VALUES as readonly string[]).includes(lower)) return false;
   return null;
 }
 
@@ -132,19 +120,9 @@ async function importActivities(rows: ParsedRow[]) {
 async function importSchedule(rows: ParsedRow[]) {
   const prisma = getPrisma();
   let count = 0;
-  const blockTypeMap: Record<string, string> = {
-    "wake up": "WakeUp", "wakeup": "WakeUp",
-    "medication": "MedicationWindow", "medication window": "MedicationWindow", "medicationwindow": "MedicationWindow", "meds": "MedicationWindow",
-    "meal": "Meal", "meals": "Meal",
-    "group session": "GroupSession", "groupsession": "GroupSession", "group": "GroupSession",
-    "free time": "FreeTime", "freetime": "FreeTime", "free": "FreeTime",
-    "quiet hours": "QuietHours", "quiethours": "QuietHours", "quiet": "QuietHours",
-    "lights out": "LightsOut", "lightsout": "LightsOut",
-    "other": "Other",
-  };
   for (const r of rows) {
     const rawType = (r["Block Type"] || "Other").toLowerCase().trim();
-    const blockType = blockTypeMap[rawType] || "Other";
+    const blockType = BLOCK_TYPE_ALIASES[rawType] || "Other";
     await prisma.dailyScheduleTemplate.create({
       data: {
         startTime: r["Start Time"] || "00:00",
@@ -278,7 +256,7 @@ async function importLaundry(rows: ParsedRow[]) {
   let count = 0;
   for (const r of rows) {
     const typeRaw = (r["Laundry Type"] || "Personal").trim();
-    const laundryType = ["Personal", "Linens", "Towels"].includes(typeRaw) ? typeRaw : "Personal";
+    const laundryType = (LAUNDRY_TYPES as readonly string[]).includes(typeRaw) ? typeRaw : "Personal";
     await prisma.laundrySchedule.create({
       data: {
         date: parseDate(r["Date"]) || new Date(),

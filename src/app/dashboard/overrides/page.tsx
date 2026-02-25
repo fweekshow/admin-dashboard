@@ -2,18 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import styles from "../../page.module.css";
-
-const ACTIONS = [
-  { id: "mainmenu-schedule", label: "Schedule", emoji: "📅", hasSmartUpdate: false },
-  { id: "mainmenu-meals", label: "Meals", emoji: "🍴", hasSmartUpdate: true },
-  { id: "mainmenu-activities", label: "Activities", emoji: "🏃", hasSmartUpdate: true },
-  { id: "mainmenu-logistics", label: "Logistics", emoji: "🧳", hasSmartUpdate: false },
-  { id: "mainmenu-medication", label: "Medications", emoji: "💊", hasSmartUpdate: false },
-  { id: "mainmenu-guidelines", label: "Guidelines", emoji: "📖", hasSmartUpdate: true },
-  { id: "mainmenu-houserules", label: "House Rules", emoji: "🏠", hasSmartUpdate: true },
-  { id: "mainmenu-support-request", label: "Request Support", emoji: "🆘", hasSmartUpdate: false },
-  { id: "mainmenu-advocates", label: "Advocates", emoji: "🙋", hasSmartUpdate: false },
-];
+import { ACTIONS } from "@/lib/constants";
 
 interface Override {
   actionId: string;

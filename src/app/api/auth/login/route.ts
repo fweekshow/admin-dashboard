@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { AUTH_COOKIE, AUTH_COOKIE_MAX_AGE } from "@/lib/constants";
+import { generateToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -21,13 +23,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Set authentication cookie
+    // Set authentication cookie with hashed token (never store raw password)
+    const token = generateToken(adminPassword);
     const response = NextResponse.json({ success: true });
-    response.cookies.set("admin_auth", "authenticated", {
+    response.cookies.set(AUTH_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: AUTH_COOKIE_MAX_AGE,
       path: "/",
     });
 

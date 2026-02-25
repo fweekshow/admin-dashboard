@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import s from "../shared.module.css";
+import CsvUploadInline from "../CsvUploadInline";
 
 interface Staff {
   id: string;
@@ -68,6 +69,7 @@ export default function StaffPage() {
           <p className={s.subtitle}>{staff.length} staff members</p>
         </div>
         <div className={s.headerActions}>
+          <CsvUploadInline table="staff" label="Staff Members" onSuccess={fetchData} />
           <button className="btn btn-primary" onClick={openAdd}>+ Add Staff</button>
         </div>
       </div>

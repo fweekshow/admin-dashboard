@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import s from "../shared.module.css";
+import CsvUploadInline from "../CsvUploadInline";
 
 interface Guideline {
   id: string;
@@ -54,7 +55,7 @@ export default function GuidelinesPage() {
     <div className={s.container}>
       <div className={s.header}>
         <div><h1>📖 Guidelines</h1><p className={s.subtitle}>{items.length} guidelines</p></div>
-        <div className={s.headerActions}><button className="btn btn-primary" onClick={openAdd}>+ Add Guideline</button></div>
+        <div className={s.headerActions}><CsvUploadInline table="guidelines" label="Guidelines" onSuccess={fetchData} /><button className="btn btn-primary" onClick={openAdd}>+ Add Guideline</button></div>
       </div>
       {error && <div className={s.errorBanner}>{error}</div>}
       <div className={s.tableWrap}>

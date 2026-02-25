@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import s from "../shared.module.css";
+import CsvUploadInline from "../CsvUploadInline";
+import { TASK_TYPES, DOW } from "@/lib/constants";
 
 interface HousekeepingItem {
   id: string;
@@ -22,9 +24,6 @@ const emptyItem = (): Partial<HousekeepingItem> => ({
   date: new Date().toISOString().split("T")[0], dayOfWeek: "", roomArea: "", taskType: "Daily",
   dailyTasksCompleted: "", assignedStaffId: "", supervisorInitials: "", notes: "",
 });
-
-const TASK_TYPES = ["Daily", "Deep"];
-const DOW = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function HousekeepingPage() {
   const [items, setItems] = useState<HousekeepingItem[]>([]);
@@ -72,7 +71,7 @@ export default function HousekeepingPage() {
     <div className={s.container}>
       <div className={s.header}>
         <div><h1>🧹 Housekeeping</h1><p className={s.subtitle}>{items.length} records</p></div>
-        <div className={s.headerActions}><button className="btn btn-primary" onClick={openAdd}>+ Add Record</button></div>
+        <div className={s.headerActions}><CsvUploadInline table="housekeeping" label="Housekeeping" onSuccess={fetchData} /><button className="btn btn-primary" onClick={openAdd}>+ Add Record</button></div>
       </div>
       {error && <div className={s.errorBanner}>{error}</div>}
       <div className={s.tableWrap}>

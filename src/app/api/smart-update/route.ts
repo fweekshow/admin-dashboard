@@ -1,25 +1,7 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { getPrisma } from "@/lib/prisma";
-
-const ACTION_TABLE_MAP: Record<string, { table: string; description: string }> = {
-  "mainmenu-meals": {
-    table: "MealTemplate",
-    description: "Meals with fields: mealType (breakfast/lunch/dinner/snack), items (string array), startTime (e.g. '08:00'), endTime (e.g. '09:00'), daysOfWeek (array of MON/TUE/WED/THU/FRI/SAT/SUN), notes (optional string)",
-  },
-  "mainmenu-activities": {
-    table: "ActivityTemplate",
-    description: "Activities with fields: name (string), description (optional), startTime (e.g. '09:00'), endTime (e.g. '10:00'), location (optional), daysOfWeek (array of MON/TUE/WED/THU/FRI/SAT/SUN), notes (optional)",
-  },
-  "mainmenu-guidelines": {
-    table: "Guideline",
-    description: "Guidelines with fields: title (string), content (string), category (optional string)",
-  },
-  "mainmenu-houserules": {
-    table: "HouseRule",
-    description: "House rules with fields: title (string), content (string), category (optional string)",
-  },
-};
+import { ACTION_TABLE_MAP, OPENAI_MODEL, OPENAI_TEMPERATURE } from "@/lib/constants";
 
 export async function POST(request: Request) {
   try {
@@ -83,13 +65,13 @@ For "delete", return records with their id.
 Return ONLY valid JSON, no explanation.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: OPENAI_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.1,
+      temperature: OPENAI_TEMPERATURE,
     });
 
     const responseText = completion.choices[0]?.message?.content;

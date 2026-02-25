@@ -2,9 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import s from "../shared.module.css";
-
-const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snack"];
+import CsvUploadInline from "../CsvUploadInline";
+import { DAYS, MEAL_TYPES } from "@/lib/constants";
 
 interface Meal {
   id: string;
@@ -132,6 +131,7 @@ export default function MealsPage() {
           <p className={s.subtitle}>{meals.length} meal templates</p>
         </div>
         <div className={s.headerActions}>
+          <CsvUploadInline table="meals" label="Meals" onSuccess={fetchMeals} />
           <button className="btn btn-primary" onClick={openAdd}>+ Add Meal</button>
         </div>
       </div>

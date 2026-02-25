@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import styles from "./layout.module.css";
+import { THEME_STORAGE_KEY } from "@/lib/constants";
 
 const NAV_GROUPS = [
   {
@@ -54,6 +55,26 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY) as "dark" | "light" | null;
+    if (saved) {
+      setTheme(saved);
+      document.documentElement.setAttribute("data-theme", saved === "light" ? "light" : "");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+    if (next === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+  };
 
   const initialOpen: Record<string, boolean> = {};
   NAV_GROUPS.forEach((g) => {
@@ -154,6 +175,9 @@ export default function DashboardLayout({
           })}
         </nav>
         <div className={styles.sidebarFooter}>
+          <button onClick={toggleTheme} className={styles.themeBtn}>
+            {theme === "dark" ? "☀️" : "🌙"} {theme === "dark" ? "Light Mode" : "Dark Mode"}
+          </button>
           <button onClick={handleLogout} className={styles.logoutBtn}>
             🚪 Logout
           </button>

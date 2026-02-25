@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { AUTH_COOKIE, AUTH_COOKIE_VALUE, AUTH_HEADER } from "@/lib/constants";
+import { AUTH_COOKIE, AUTH_HEADER, TOKEN_SALT } from "@/lib/constants";
 
-export function middleware(request: NextRequest) {
+
+async function sha256(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip auth for login page and API login endpoint
@@ -10,14 +19,23 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- Auth: cookie OR secret header ---
-  const authCookie = request.cookies.get(AUTH_COOKIE);
-  const cookieOk = authCookie?.value === AUTH_COOKIE_VALUE;
+  const adminPassword = process.env.ADMIN_PASSWORD || "";
+  let isAuthenticated = false;
 
-  const secretHeader = request.headers.get(AUTH_HEADER);
-  const headerOk = !!secretHeader && secretHeader === process.env.ADMIN_PASSWORD;
+  // Path 1: Cookie — verify hashed token
+  const cookieValue = request.cookies.get(AUTH_COOKIE)?.value;
+  if (cookieValue) {
+    const expectedToken = await sha256(adminPassword + TOKEN_SALT);
+    isAuthenticated = cookieValue === expectedToken;
+  }
 
-  if (cookieOk || headerOk) {
+  // Path 2: Header — check raw admin secret (server-to-server only)
+  if (!isAuthenticated) {
+    const headerValue = request.headers.get(AUTH_HEADER);
+    isAuthenticated = !!headerValue && headerValue === adminPassword;
+  }
+
+  if (isAuthenticated) {
     return NextResponse.next();
   }
 

@@ -1,5 +1,3 @@
-
-
 /** Short day abbreviations used across schedule / meal / activity pages */
 export const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 

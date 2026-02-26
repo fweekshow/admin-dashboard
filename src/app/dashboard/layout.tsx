@@ -61,7 +61,11 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(THEME_STORAGE_KEY) as "dark" | "light" | null;
     if (saved) {
       setTheme(saved);
-      document.documentElement.setAttribute("data-theme", saved === "light" ? "light" : "");
+      if (saved === "light") {
+        document.documentElement.setAttribute("data-theme", "light");
+      } else {
+        document.documentElement.removeAttribute("data-theme");
+      }
     }
   }, []);
 

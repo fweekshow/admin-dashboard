@@ -22,7 +22,7 @@ function validateHeaders(csvHeaders: string[], table: string): { valid: boolean;
 function parseCSV(text: string): { headers: string[]; rows: ParsedRow[] } {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length < 2) return { headers: [], rows: [] };
-  const headers = lines[0].split(",").map((h) => h.trim());
+  const headers = splitCSVLine(lines[0]).map((h) => h.trim());
   const rows: ParsedRow[] = [];
   for (let i = 1; i < lines.length; i++) {
     const values = splitCSVLine(lines[i]);
@@ -40,7 +40,16 @@ function splitCSVLine(line: string): string[] {
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
-    if (ch === '"') { inQuotes = !inQuotes; continue; }
+    if (ch === '"') {
+      // Handle escaped quotes ("")
+      if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+        current += '"';
+        i++; // skip next quote
+        continue;
+      }
+      inQuotes = !inQuotes;
+      continue;
+    }
     if (ch === "," && !inQuotes) { result.push(current); current = ""; continue; }
     current += ch;
   }

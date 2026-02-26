@@ -19,20 +19,31 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const adminPassword = process.env.ADMIN_PASSWORD || "";
+  // if ADMIN_PASSWORD is not configured, block all requests
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
   let isAuthenticated = false;
 
-  // Path 1: Cookie — verify hashed token
+  // Path 1: Cookie — verify hashed token (browser sessions)
   const cookieValue = request.cookies.get(AUTH_COOKIE)?.value;
   if (cookieValue) {
     const expectedToken = await sha256(adminPassword + TOKEN_SALT);
     isAuthenticated = cookieValue === expectedToken;
   }
 
-  // Path 2: Header — check raw admin secret (server-to-server only)
-  if (!isAuthenticated) {
+  // Path 2: Header — verify hashed token (server-to-server, API routes only)
+  if (!isAuthenticated && pathname.startsWith("/api/")) {
     const headerValue = request.headers.get(AUTH_HEADER);
-    isAuthenticated = !!headerValue && headerValue === adminPassword;
+    if (headerValue) {
+      const expectedToken = await sha256(adminPassword + TOKEN_SALT);
+      isAuthenticated = headerValue === expectedToken;
+    }
   }
 
   if (isAuthenticated) {
